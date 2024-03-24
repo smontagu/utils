@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# checkNikud:
+#  Script for sanity checking of hebrew characters.
+#  See Help() for details
+#
+# Author: Simon Montagu smontagu@smontagu.org
+#
+# Licensed under the GNU GPL v3, which may be viewed at
+# https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+
+# Define some ranges of hebrew characters
+# NOTHEBREW: not HEBREW POINT SHEBA - HEBREW LIGATURE YIDDISH DOUBLE YOD
+NOTHEBREW=\([^\\N{U+05B0}-\\N{U+05F2}]\)
+
+# VOWELS: HEBREW POINT SHEBA - HEBREW POINT QUBUTS
+VOWELS=\([\\N{U+05B0}-\\N{U+05BB}]\)
+
+# OTHERPOINTS: HEBREW POINT DAGESH - HEBREW POINT SIN DOT
+OTHERPOINTS=\([\\N{U+05BC}-\\N{U+05C2}]\)
+
+# ALLPOINTS: HEBREW POINT SHEBA - HEBREW POINT RAFE, HEBREW POINT SHIN/SIN DOT
+ALLPOINTS=\([\\N{U+05B0}-\\N{U+05BF}\\N{U+05C1}-\\N{U+05C2}]\)
+
+# NOTSHIN: HEBREW LETTER ALEPH - HEBREW LETTER RESH, HEBREW LETTER TAV
+NOTSHIN=\([\\N{U+05D0}-\\N{U+05E8}\\N{U+05EA}]\)
+
+# SHINDOTS: HEBREW POINT SHIN DOT and HEBREW POINT SIN DOT
+SHINDOTS=\([\\N{U+05C1}-\\N{U+05C2}]\)
+
+Help() {
+    echo "Usage: checkNikud [OPTIONS] [FILES]"
+    echo "       Perform sanity checking for Hebrew diacritics"
+    echo "       Currently detects the following:"
+    echo "        Consecutive vowels"
+    echo "        Other diacritics appearing twice in succession"
+    echo "        Shin dot or Sin dot on Hebrew consonants other than Shin"
+    echo "        Hebrew diacritics not on Hebrew characters"
+    echo "Options:"
+    echo "  -h, --help     Display this message"
+    echo "  -v, --verbose  Verbose mode"
+}
+
+# Define the search function. Using grep -P because our ranges use Perl RE
+# syntax (the only way I know to pass Unicode code points to grep)
+grepIt () {
+    SEARCHSTRING=$1
+    TITLE=$2
+
+    # Is the search string found?
+    if grep -Pq $SEARCHSTRING $FILESPEC ;
+    then
+        echo "Found $TITLE: "
+
+        # Output, in hex, all the unique combinations found
+        # Arguments to od mean: No address, skip first 2 bytes (BOM output
+        # by iconf), newline every 6 bytes, format as two-byte hex
+        # The grep command after od filters out the newlines
+        grep -Poh $SEARCHSTRING $FILESPEC | sort -u | iconv -t unicode | od -An -j2 -w6 -tx2 | grep -oE \("..[^0]. "\)+
+
+        # Output the matching lines
+        grep -P $SEARCHSTRING $FILESPEC
+
+        RETURNCODE=1
+    else
+        if [ $VERBOSE = 1 ] ;
+        then
+            echo "No $TITLE" >&2
+        fi
+    fi
+}
+
+RETURNCODE=0
+VERBOSE=0
+FILESPEC="*.tex"
+
+TEMP=`getopt -o vh:: --long verbose,help:: \
+     -n 'checkNikud' -- "$@"`
+
+if [ $? != 0 ] ; then Help ; exit 1 ; fi
+
+eval set -- "$TEMP"
+while true ; do
+      case "$1" in
+          -v|--verbose) VERBOSE=1 ; shift ;;
+          -h|--help) Help ; exit 0 ;;
+          --) shift ; break ;;
+          *) Help ; exit 1;;
+      esac
+done
+
+if [ $# != 0 ] ;
+then
+    FILESPEC="$@"
+else
+    echo "No files specified on command line"
+    exit 1
+fi
+
+grepIt "$VOWELS{2}" "consecutive vowels"
+grepIt "$OTHERPOINTS\\1" "double points"
+grepIt "$NOTSHIN$SHINDOTS" "misplaced shin/sin dots"
+grepIt "$NOTHEBREW$ALLPOINTS" "Hebrew point not after Hebrew letter"
+
+exit $RETURNCODE
