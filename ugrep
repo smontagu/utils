@@ -1,6 +1,7 @@
 #!/bin/bash
 
-UCDB="/home/smontagu/Documents/unicode/UnicodeData.txt"
+UDIR="~/Documents/unicode"
+UCDB="$UDIR/UnicodeData.txt"
 Anchored=0
 Insensitive=1
 CODEPOINT="[[:xdigit:]]{4,6}"
@@ -23,7 +24,7 @@ Usage ()
 	echo "         -d CODEPOINT Search for decomposition"
 	echo "         -e DIGIT     Search for decimal digit"
 	echo "         -i DIGIT     Search for digit"
-        echo "         -x NUMBER    Search for number"
+  echo "         -x NUMBER    Search for number"
 	echo "         -r           Search for Bidi mirrored property"
 	echo "         -o           Search for comment"
 	echo "         -t CODEPOINT Search for title-case mapping"
@@ -169,7 +170,7 @@ fi
 action="cat $UCDB"
 while getopts ra:hc:n:w:g:m:b:o:d:e:i:x:u:l:t:v: opt ; do
 	case "$opt" in
-		v) UCDB="/home/smontagu/documents/unicode/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
+		v) UCDB="$UDIR/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
 		c) action="$action | FindCodepoint $OPTARG";;
 	        a) action="$action | FindCodepoint $(echo 16o"$OPTARG"n | dc)";;
 		n) action="$action | FindName $OPTARG";;
@@ -177,18 +178,18 @@ while getopts ra:hc:n:w:g:m:b:o:d:e:i:x:u:l:t:v: opt ; do
 		b) action="$action | FindBidiClass $OPTARG";;
 		g) action="$action | FindGeneralCategory $OPTARG";;
 		m) Anchored=1 ; action="$action | FindCombiningClass $OPTARG";;
-	        d) action="$action | FindDecomposition $OPTARG";;
-	        e) action="$action | FindDecimal $OPTARG";;
-	        i) action="$action | FindDigit $OPTARG";;
-	        x) action="$action | FindNumeric $OPTARG";;
+	  d) action="$action | FindDecomposition $OPTARG";;
+	  e) action="$action | FindDecimal $OPTARG";;
+	  i) action="$action | FindDigit $OPTARG";;
+	  x) action="$action | FindNumeric $OPTARG";;
 		r) action="$action | FindMirrored";;
-	        o) action="$action | FindComment $OPTARG";;
-	        t) action="$action | FindTitleCase $OPTARG";;
-	        u) action="$action | FindUpperCase $OPTARG";;
-	        l) action="$action | FindLowerCase $OPTARG";;
+	  o) action="$action | FindComment $OPTARG";;
+	  t) action="$action | FindTitleCase $OPTARG";;
+	  u) action="$action | FindUpperCase $OPTARG";;
+	  l) action="$action | FindLowerCase $OPTARG";;
 
 		h) Usage ; exit 0;;
-	        ?) Usage ; exit 0;;
+	  ?) Usage ; exit 0;;
 	esac
 done
 #action="$action | sort -u"
