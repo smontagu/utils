@@ -38,159 +38,158 @@ Usage ()
 Find()
 {
 #	echo $1
-        if [ $Insensitive -eq 1 ] ; then
-	    egrep -i "$1"
-	else 
-	    egrep "$1"
-	fi
+    if [ $Insensitive -eq 1 ] ; then
+	      egrep -i "$1"
+	  else
+	      egrep "$1"
+	  fi
 }
 
 FindField ()
 {
-	if [ $Anchored -eq 1 ] ; then
-		Find "^$FIELD{$1}$2;"
-	else
-         	if test $1 -lt 14 ; then
-#			echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
-			Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
-		 else
-#			echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
-			Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
-		fi
-			
-	fi
+	  if [ $Anchored -eq 1 ] ; then
+		    Find "^$FIELD{$1}$2;"
+	  else
+        if test $1 -lt 14 ; then
+#			      echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
+			      Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
+		    else
+#   			  echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
+			      Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
+		    fi
+	  fi
 }
 
 FindCodepoint ()
 {
-	if [ $Anchored -eq 1 ] ; then
-		Find "^$1;"
-	else
-		Find "^0*$1;"
-	fi
+	  if [ $Anchored -eq 1 ] ; then
+		    Find "^$1;"
+	  else
+		    Find "^0*$1;"
+	  fi
 }
 
 FindName ()
 {
-	if [ $Anchored -eq 1 ] ; then
-		Find "^$CODEPOINT;$1;"
-	else
-#	        echo "^$CODEPOINT;$FIELD_SUBSTRING$1"
-		Find "^$CODEPOINT;$FIELD_SUBSTRING$1"
-	fi
+	  if [ $Anchored -eq 1 ] ; then
+		    Find "^$CODEPOINT;$1;"
+	  else
+#	      echo "^$CODEPOINT;$FIELD_SUBSTRING$1"
+		    Find "^$CODEPOINT;$FIELD_SUBSTRING$1"
+	  fi
 }
 
 FindWord ()
 {
-	if [ $Anchored -eq 1 ] ; then
-	        Find "^$CODEPOINT;\<$1\>"
-	else
-#	        echo "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
-		Find "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
-	fi
+	  if [ $Anchored -eq 1 ] ; then
+	      Find "^$CODEPOINT;\<$1\>"
+	  else
+#	      echo "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
+		    Find "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
+	  fi
 }
 
 FindGeneralCategory ()
 {
-	FindField 2 "$1"
+	  FindField 2 "$1"
 }
 
 FindCombiningClass ()
 {
-	FindField 3 "$1"
+	  FindField 3 "$1"
 }
 
 FindBidiClass ()
 {
-	FindField 4 "$1"
+	  FindField 4 "$1"
 }
 
 FindDecomposition ()
 {
-        FindField 5 "$1"
+    FindField 5 "$1"
 }
 
 FindDecimal ()
 {
-        FindField 6 "$1"
+    FindField 6 "$1"
 }
 
 FindDigit ()
 {
-        FindField 5 ";;$1"
+    FindField 5 ";;$1"
 }
 
 FindNumeric ()
 {
-       FindField 6 ";;$1"
+    FindField 6 ";;$1"
 }
 
 FindMirrored ()
 {
-	FindField 9 "Y"
+	  FindField 9 "Y"
 }
 
 FindComment ()
 {
-        FindField 11 "$1"
+    FindField 11 "$1"
 }
 
 FindUpperCase ()
 {
-        if test "$1" = "...." ; then
-		FindField 12 "$CODEPOINT"
-	else
-	        FindField 12 "$1"
-	fi
+    if test "$1" = "...." ; then
+		    FindField 12 "$CODEPOINT"
+	  else
+	      FindField 12 "$1"
+	  fi
 }
 
 FindLowerCase ()
 {
-        if test "$1" = "...." ; then
-		FindField 13 "$CODEPOINT"
-	else
-	        FindField 13 "$1"
-	fi
+    if test "$1" = "...." ; then
+		    FindField 13 "$CODEPOINT"
+	  else
+	      FindField 13 "$1"
+	  fi
 }
 
 FindTitleCase ()
 {
-       if test "$1" = "...." ; then
-		FindField 14 "$CODEPOINT"
-	else
-	        FindField 14 "$1"
-	fi
+    if test "$1" = "...." ; then
+		    FindField 14 "$CODEPOINT"
+	  else
+	      FindField 14 "$1"
+	  fi
 }
 
 if test $# -eq 0 ; then
-	Usage
-	exit 1
+	  Usage
+	  exit 1
 fi
 
 action="cat $UCDB"
 while getopts ra:hc:n:w:g:m:b:o:d:e:i:x:u:l:t:v: opt ; do
-	case "$opt" in
-		v) UCDB="$UDIR/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
-		c) action="$action | FindCodepoint $OPTARG";;
-	        a) action="$action | FindCodepoint $(echo 16o"$OPTARG"n | dc)";;
-		n) action="$action | FindName $OPTARG";;
-		w) action="$action | FindWord $OPTARG";;
-		b) action="$action | FindBidiClass $OPTARG";;
-		g) action="$action | FindGeneralCategory $OPTARG";;
-		m) Anchored=1 ; action="$action | FindCombiningClass $OPTARG";;
-	  d) action="$action | FindDecomposition $OPTARG";;
-	  e) action="$action | FindDecimal $OPTARG";;
-	  i) action="$action | FindDigit $OPTARG";;
-	  x) action="$action | FindNumeric $OPTARG";;
-		r) action="$action | FindMirrored";;
-	  o) action="$action | FindComment $OPTARG";;
-	  t) action="$action | FindTitleCase $OPTARG";;
-	  u) action="$action | FindUpperCase $OPTARG";;
-	  l) action="$action | FindLowerCase $OPTARG";;
+	  case "$opt" in
+		    v) UCDB="$UDIR/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
+		    c) action="$action | FindCodepoint $OPTARG";;
+	      a) action="$action | FindCodepoint $(echo 16o"$OPTARG"n | dc)";;
+		    n) action="$action | FindName $OPTARG";;
+		    w) action="$action | FindWord $OPTARG";;
+		    b) action="$action | FindBidiClass $OPTARG";;
+		    g) action="$action | FindGeneralCategory $OPTARG";;
+		    m) Anchored=1 ; action="$action | FindCombiningClass $OPTARG";;
+	      d) action="$action | FindDecomposition $OPTARG";;
+	      e) action="$action | FindDecimal $OPTARG";;
+	      i) action="$action | FindDigit $OPTARG";;
+	      x) action="$action | FindNumeric $OPTARG";;
+		    r) action="$action | FindMirrored";;
+	      o) action="$action | FindComment $OPTARG";;
+	      t) action="$action | FindTitleCase $OPTARG";;
+	      u) action="$action | FindUpperCase $OPTARG";;
+	      l) action="$action | FindLowerCase $OPTARG";;
 
-		h) Usage ; exit 0;;
-	  ?) Usage ; exit 0;;
-	esac
+		    h) Usage ; exit 0;;
+	      ?) Usage ; exit 0;;
+	  esac
 done
 #action="$action | sort -u"
 #echo $action;
