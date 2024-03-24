@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# A script to search the Unicode Character Database by codepoints,
+#  character names, or character properties
+#
+# Author: Simon Montagu smontagu@smontagu.org
+#
+# Licensed under the GNU GPL v3, which may be viewed at
+# https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+
 if [[ -z $UCD_DIR ]] ; then
     UCD_DIR="$HOME/Documents/unicode"
 fi
@@ -17,6 +25,7 @@ Usage ()
   echo "       Expects a copy of UnicodeData.txt to be present in"
   echo "        the directory specified in the environment variable"
   echo "        UCD_DIR, or by default in ~/Documents/unicode"
+  echo "       All text searches are case-insensitive"
   echo ""
   echo "Searches:"
   echo "         -c CODEPOINT Search for hexadecimal codepoint"
