@@ -1,7 +1,9 @@
 #!/bin/bash
 
-UDIR="~/Documents/unicode"
-UCDB="$UDIR/UnicodeData.txt"
+if [[ -z $UCD_DIR ]] ; then
+    UCD_DIR="$HOME/Documents/unicode"
+fi
+UCDB="$UCD_DIR/UnicodeData.txt"
 Anchored=0
 Insensitive=1
 CODEPOINT="[[:xdigit:]]{4,6}"
@@ -12,10 +14,13 @@ Usage ()
 {
   echo "ugrep: find things in the Unicode Character Database"
   echo "       Usage: ugrep [OPTION].."
+  echo "       Expects a copy of UnicodeData.txt to be present in"
+  echo "        the directory specified in the environment variable"
+  echo "        UCD_DIR, or by default in ~/Documents/unicode"
   echo ""
   echo "Searches:"
   echo "         -c CODEPOINT Search for hexadecimal codepoint"
-  echo "         -a CODEPOINT Search for decimal codepoint"
+  echo "         -a CODEPOINT Search for decimal codepoint (requires dc)"
   echo "         -n NAME      Search for character name"
   echo "         -w WORD      Search for whole word in character name"
   echo "         -g CATEGORY  Search for general category"
@@ -32,12 +37,13 @@ Usage ()
   echo "         -l CODEPOINT Search for lower-case mapping"
   echo ""
   echo "Options:"
-  echo "         -h     Print this message and exit"
+  echo "          -v VERSION  Search in specified version of the UCD"
+  echo "Other:"
+  echo "          -h          Print this message and exit"
 }
 
 Find()
 {
-#  echo $1
     if [ $Insensitive -eq 1 ] ; then
         egrep -i "$1"
     else
@@ -51,10 +57,8 @@ FindField ()
         Find "^$FIELD{$1}$2;"
     else
         if test $1 -lt 14 ; then
-#           echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
             Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD"
         else
-#           echo "Find ^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
             Find "^$FIELD{$1}$FIELD_SUBSTRING$2$FIELD_SUBSTRING$"
         fi
     fi
@@ -74,7 +78,6 @@ FindName ()
     if [ $Anchored -eq 1 ] ; then
         Find "^$CODEPOINT;$1;"
     else
-#        echo "^$CODEPOINT;$FIELD_SUBSTRING$1"
         Find "^$CODEPOINT;$FIELD_SUBSTRING$1"
     fi
 }
@@ -84,7 +87,6 @@ FindWord ()
     if [ $Anchored -eq 1 ] ; then
         Find "^$CODEPOINT;\<$1\>"
     else
-#        echo "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
         Find "^$CODEPOINT;$FIELD_SUBSTRING\<$1\>"
     fi
 }
@@ -169,7 +171,7 @@ fi
 action="cat $UCDB"
 while getopts ra:hc:n:w:g:m:b:o:d:e:i:x:u:l:t:v: opt ; do
     case "$opt" in
-        v) UCDB="$UDIR/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
+        v) UCDB="$UCD_DIR/$OPTARG/UnicodeData.txt"; action="cat $UCDB";;
         c) action="$action | FindCodepoint $OPTARG";;
         a) action="$action | FindCodepoint $(echo 16o"$OPTARG"n | dc)";;
         n) action="$action | FindName $OPTARG";;
@@ -191,6 +193,10 @@ while getopts ra:hc:n:w:g:m:b:o:d:e:i:x:u:l:t:v: opt ; do
         ?) Usage ; exit 0;;
     esac
 done
-#action="$action | sort -u"
-#echo $action;
+
+if ! test -f $UCDB ; then
+    echo "Could not find Unicode Character Database at $UCDB"
+    exit 1
+fi
+
 eval $action
