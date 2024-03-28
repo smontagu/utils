@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <style type="text/css">
+   h2 { text-align: center }
+   #textin { background-color: black; color: lime; font-size: xx-large;}
+   #textout {font-size: xx-large;}
+  </style>
+  <title>Convert Hebrew to Phoenician</title>
+  <script type="text/javascript">
+function Convert()
+{
+    var inText = document.getElementById("textin").value;
+    var outText = "";
+    for (var i = 0; i < inText.length; ++i) {
+	var c = inText.charCodeAt(i);
+	if (c == 0x2E) {
+	    outText += '\ud802\udd1f';
+	} else if (c >= 0x05D0 && c <= 0x05EA) {
+	    outText += '\ud802' + tablePhoenician.charAt(c - 0x05D0);
+	} else {
+	    outText += inText.charAt(i);
+	}
+    }
+    document.getElementById("textout").value = outText;
+    return true;
+}
+const tablePhoenician =
+/*‭    א     ב     ג     ד     ה     ו     ז     ח ‬*/ 
+"\udd00\udd01\udd02\udd03\udd04\udd05\udd06\udd07" +
+/*‭    ט     י     ך     כ     ל     ם     מ     ן‬ */ 
+"\udd08\udd09\udd0A\udd0a\udd0b\udd0c\udd0c\udd0d" +
+/*‭    נ     ס     ע     ף     פ     ץ     צ     ק‬ */ 
+"\udd0d\udd0e\udd0f\udd10\udd10\udd11\udd11\udd12" +
+/*‭    ר     ש     ת‬ */ 
+"\udd13\udd14\udd15";
+  </script>
+ </head>
+ <body dir="rtl">
+  <center>
+  <h2>כתוב או הדבק לתוך תיבה הטקסט העליון ולחץ 'תרגם'</h2>
+  <h2>Type or paste Hebrew text into the upper textarea, then press Convert</h2>
+  <textarea rows="5" cols="40" id="textin"></textarea><br>
+  <button type="submit" onclick="Convert()">תרגם<br>Convert</button><br>
+  <textarea rows="5" cols="40" id="textout"></textarea>
+  </center>
+ </body>
+</html>
