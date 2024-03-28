@@ -48,7 +48,7 @@ grepIt () {
     TITLE=$2
 
     # Is the search string found?
-    if grep -Pq $SEARCHSTRING $FILESPEC ;
+    if eval "grep -Pq \"$SEARCHSTRING\" $FILESPEC" ;
     then
         echo "Found $TITLE: "
 
@@ -56,10 +56,10 @@ grepIt () {
         # Arguments to od mean: No address, skip first 2 bytes (BOM output
         # by iconf), newline every 6 bytes, format as two-byte hex
         # The grep command after od filters out the newlines
-        grep -Poh $SEARCHSTRING $FILESPEC | sort -u | iconv -t unicode | od -An -j2 -w6 -tx2 | grep -oE \("..[^0]. "\)+
+        eval "grep -Poh \"$SEARCHSTRING\" $FILESPEC" | sort -u | iconv -t unicode | od -An -j2 -w6 -tx2 | grep -oE \("..[^0]. "\)+
 
         # Output the matching lines
-        grep -P $SEARCHSTRING $FILESPEC
+        eval "grep -P \"$SEARCHSTRING\" $FILESPEC"
 
         RETURNCODE=1
     else
@@ -72,7 +72,7 @@ grepIt () {
 
 RETURNCODE=0
 VERBOSE=0
-FILESPEC="*.tex"
+FILESPEC=""
 
 TEMP=`getopt -o vh:: --long verbose,help:: \
      -n 'checkNikud' -- "$@"`
@@ -91,7 +91,14 @@ done
 
 if [ $# != 0 ] ;
 then
-    FILESPEC="$@"
+    # We could just set FILESPEC to all the remaining arguments using $@
+    # but that causes a bug with filenames with internal spaces.
+    # So we pass each argument separately in quotes
+    # (This might cause problems in turn if the number of files in the
+    #  directory is huge)
+    for arg do
+        FILESPEC="$FILESPEC\"$arg\" ";
+    done
 else
     echo "No files specified on command line"
     exit 1
