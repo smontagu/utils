@@ -10,11 +10,13 @@
 # https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 
 # Define some ranges of hebrew characters
-# NOTHEBREW: not HEBREW POINT SHEBA - HEBREW LIGATURE YIDDISH DOUBLE YOD
-NOTHEBREW=\([^\\N{U+05B0}-\\N{U+05F2}]\)
+# CANTPRECEDENIKUD: none of HEBREW POINT SHEVA - HEBREW POINT DAGESH,
+# HEBREW POINT SHIN DOT, HEBREW POINT SIN DOT,
+# HEBREW LETTER ALEF - HEBREW LIGATURE YIDDISH DOUBLE YOD
+CANTPRECEDENIKUD=[^\\N{U+05B0}-\\N{U+05BC}\\N{U+05C1}\\N{U+05C2}\\N{U+05D0}-\\N{U+05F2}]
 
 # VOWELS: HEBREW POINT SHEBA - HEBREW POINT QUBUTS
-VOWELS=\([\\N{U+05B0}-\\N{U+05BB}]\)
+VOWELS=[\\N{U+05B0}-\\N{U+05BB}]
 
 # OTHERPOINTS: HEBREW POINT DAGESH - HEBREW POINT SIN DOT
 OTHERPOINTS=\([\\N{U+05BC}-\\N{U+05C2}]\)
@@ -27,6 +29,10 @@ NOTSHIN=\([\\N{U+05D0}-\\N{U+05E8}\\N{U+05EA}]\)
 
 # SHINDOTS: HEBREW POINT SHIN DOT and HEBREW POINT SIN DOT
 SHINDOTS=\([\\N{U+05C1}-\\N{U+05C2}]\)
+
+# DOTLESSSHIN: HEBREW LETTER SHIN followed by something other than SHINDOTS, or
+#               at end of line
+DOTLESSSHIN=\(\\N{U+05E9}[^\\N{U+05C1}\\N{U+05C2}]\|\\N{U+05E9}$\)
 
 Help() {
     echo "Usage: checkNikud [OPTIONS] [FILES]"
@@ -48,18 +54,18 @@ grepIt () {
     TITLE=$2
 
     # Is the search string found?
-    if eval "grep -Pq \"$SEARCHSTRING\" $FILESPEC" ;
+    if eval "grep -HP \"$VOWELS\" $FILESPEC | grep -Pq \"$SEARCHSTRING\"" ;
     then
         echo "Found $TITLE: "
 
         # Output, in hex, all the unique combinations found
         # Arguments to od mean: No address, skip first 2 bytes (BOM output
-        # by iconf), newline every 6 bytes, format as two-byte hex
-        # The grep command after od filters out the newlines
-        eval "grep -Poh \"$SEARCHSTRING\" $FILESPEC" | sort -u | iconv -t unicode | od -An -j2 -w6 -tx2 | grep -oE \("..[^0]. "\)+
+        # by iconf), format as two-byte hex
+        # The sed command after od filters out the newlines
+        eval "grep -HP \"$VOWELS\" $FILESPEC | grep -Poh \"$SEARCHSTRING\"" | sort -u | iconv -t unicode | od -An -j2 -tx2 | sed 's/000a /\n /g' | sed 's/000a//g'
 
         # Output the matching lines
-        eval "grep -P \"$SEARCHSTRING\" $FILESPEC"
+        eval "grep -HP \"$VOWELS\" $FILESPEC | grep -P \"$SEARCHSTRING\""
 
         RETURNCODE=1
     else
@@ -104,9 +110,10 @@ else
     exit 1
 fi
 
-grepIt "$VOWELS{2}" "consecutive vowels"
+grepIt "\($VOWELS\){2}" "consecutive vowels"
 grepIt "$OTHERPOINTS\\1" "double points"
 grepIt "$NOTSHIN$SHINDOTS" "misplaced shin/sin dots"
-grepIt "$NOTHEBREW$ALLPOINTS" "Hebrew point not after Hebrew letter"
+grepIt "$CANTPRECEDENIKUD$ALLPOINTS" "Hebrew point not after Hebrew letter"
+grepIt "$DOTLESSSHIN" "Shin without sin or shin dot"
 
 exit $RETURNCODE
